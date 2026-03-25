@@ -5,11 +5,6 @@ import json
 import sys
 from typing import Dict, List, Union, NoReturn, Iterator, Any
 
-
-# Базовое исключение для журнала (мб пригодится)
-class TodoJournalError(Exception):
-    pass
-
 #==============Класс для управления журналом===================
 class TodoJournal:
 
