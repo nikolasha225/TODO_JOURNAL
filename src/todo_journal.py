@@ -1,7 +1,7 @@
 #Модуль для работы с журналом
 import json
 import sys
-from typing import Dict, List, Union, NoReturn
+from typing import Dict, List, Union, NoReturn, Iterator, Any
 
 
 # Базовое исключение для журнала (мб пригодится)
@@ -14,6 +14,7 @@ class TodoJournal:
     #Константные динамические атрибуты
     _readonly_attrs = {'first', 'last'}
 
+    #Конструктор
     def __init__(self, path_todo: str):
         self.path_todo = path_todo
         data = self._parse()
@@ -49,3 +50,17 @@ class TodoJournal:
     def remove_entry(self, index: int) -> None:
         del self.entries[index]
         self._update({'name': self.name, 'todos': self.entries})
+
+    #--------magic метрды------------
+
+    #Возвращает количество задач
+    def __len__(self) -> int:
+        return len(self.entries)
+
+    #Итератор по задачам
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.entries)
+
+    #Человеческий индекс (поддерживает срезы)
+    def __getitem__(self, index: Any) -> Any:
+        return self.entries[index]
