@@ -1,0 +1,4 @@
+==============================poerty====================================
+вызов -> C:\Users\836D~1\AppData\Roaming\Python\Scripts\poetry
+тесты ->  C:\Users\836D~1\AppData\Roaming\Python\Scripts\poetry run pytest
+установка зависимостей ->  C:\Users\836D~1\AppData\Roaming\Python\Scripts\poetry install
