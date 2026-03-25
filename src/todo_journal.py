@@ -1,4 +1,6 @@
 #Модуль для работы с журналом
+
+
 import json
 import sys
 from typing import Dict, List, Union, NoReturn, Iterator, Any
@@ -50,6 +52,14 @@ class TodoJournal:
     def remove_entry(self, index: int) -> None:
         del self.entries[index]
         self._update({'name': self.name, 'todos': self.entries})
+
+    #Редактирование задачи по индексу
+    def edit_entry(self, index: int, new_text: str) -> None:
+        if 0 <= index < len(self.entries):
+            self.entries[index] = new_text
+            self._update({'name': self.name, 'todos': self.entries})
+        else:
+            raise IndexError(f"Индекс {index} вне диапазона")
 
     #--------magic метрды------------
 
