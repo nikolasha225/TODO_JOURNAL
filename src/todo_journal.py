@@ -64,3 +64,21 @@ class TodoJournal:
     #Человеческий индекс (поддерживает срезы)
     def __getitem__(self, index: Any) -> Any:
         return self.entries[index]
+
+    #Динамический доступ к first и last (по другим нельзя вызвать)
+    def __getattr__(self, name: str) -> Any:
+        if name == 'first':
+            if self.entries:
+                return self.entries[0]
+            raise AttributeError("Нет задач в журнале")
+        if name == 'last':
+            if self.entries:
+                return self.entries[-1]
+            raise AttributeError("Нет задач в журнале")
+        raise AttributeError(f"{type(self).__name__} не имеет атрибута '{name}'")
+
+    #Защита атрибутов first и last от изменения
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name in self._readonly_attrs:
+            raise AttributeError(f"Атрибут '{name}' доступен только для чтения")
+        super().__setattr__(name, value)
