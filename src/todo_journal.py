@@ -11,6 +11,9 @@ class TodoJournalError(Exception):
 #==============Класс для управления журналом===================
 class TodoJournal:
 
+    #Константные динамические атрибуты
+    _readonly_attrs = {'first', 'last'}
+
     def __init__(self, path_todo: str):
         self.path_todo = path_todo
         data = self._parse()
