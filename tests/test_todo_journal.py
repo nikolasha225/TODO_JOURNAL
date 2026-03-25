@@ -1,11 +1,25 @@
-"""Тесты для класса TodoJournal."""
+#Тесты для класса TodoJournal
+
+
 import json
 import pytest
 from src.todo_journal import TodoJournal
 
 
+#Фикстура: журнал с тремя задачами
+@pytest.fixture
+def journal_with_entries(tmpdir):
+    todo_path = tmpdir.join("test.todo")
+    TodoJournal.create(todo_path, "test")
+    journal = TodoJournal(todo_path)
+    journal.add_entry("Задача 1")
+    journal.add_entry("Задача 2")
+    journal.add_entry("Задача 3")
+    return journal
+
+
+#Проверка создания журнала
 def test_create(tmpdir):
-    """Проверка создания журнала."""
     todo_path = tmpdir.join("test.todo")
     expected_name = "test_journal"
     TodoJournal.create(todo_path, expected_name)
@@ -17,8 +31,8 @@ def test_create(tmpdir):
     assert data["todos"] == []
 
 
+#Проверка добавления задачи
 def test_add_entry(tmpdir):
-    """Проверка добавления задачи."""
     todo_path = tmpdir.join("test.todo")
     TodoJournal.create(todo_path, "test")
     journal = TodoJournal(todo_path)
@@ -31,8 +45,8 @@ def test_add_entry(tmpdir):
     assert data["todos"] == ["Помыть посуду"]
 
 
+#Проверка удаления задачи
 def test_remove_entry(tmpdir):
-    """Проверка удаления задачи."""
     todo_path = tmpdir.join("test.todo")
     TodoJournal.create(todo_path, "test")
     journal = TodoJournal(todo_path)
@@ -45,3 +59,69 @@ def test_remove_entry(tmpdir):
     with open(todo_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
     assert data["todos"] == ["Задача 2"]
+
+
+#Проверка __len__
+def test_len(journal_with_entries):
+    assert len(journal_with_entries) == 3
+
+
+#Проверка __iter__
+def test_iter(journal_with_entries):
+    tasks = list(journal_with_entries)
+    assert tasks == ["Задача 1", "Задача 2", "Задача 3"]
+
+
+#Проверка __getitem__
+def test_getitem(journal_with_entries):
+    assert journal_with_entries[0] == "Задача 1"
+    assert journal_with_entries[1] == "Задача 2"
+    assert journal_with_entries[2] == "Задача 3"
+    assert journal_with_entries[-1] == "Задача 3"
+    #Срезы
+    assert journal_with_entries[1:3] == ["Задача 2", "Задача 3"]
+
+
+#Проверка __getattr__ для first и last
+def test_getattr_first_last(journal_with_entries):
+    assert journal_with_entries.first == "Задача 1"
+    assert journal_with_entries.last == "Задача 3"
+
+
+#Проверка __getattr__ для пустого
+def test_getattr_empty_journal(tmpdir):
+    todo_path = tmpdir.join("empty.todo")
+    TodoJournal.create(todo_path, "empty")
+    journal = TodoJournal(todo_path)
+
+    with pytest.raises(AttributeError, match="Нет задач в журнале"):
+        _ = journal.first
+    with pytest.raises(AttributeError, match="Нет задач в журнале"):
+        _ = journal.last
+
+
+#Проверка __setattr__ – нельзя изменить first и last
+def test_setattr_readonly(journal_with_entries):
+    with pytest.raises(AttributeError, match="Атрибут 'first' доступен только для чтения"):
+        journal_with_entries.first = "Новая задача"
+    with pytest.raises(AttributeError, match="Атрибут 'last' доступен только для чтения"):
+        journal_with_entries.last = "Новая задача"
+
+    #Но можно установить другие атрибуты
+    journal_with_entries.new_attr = "работает"
+    assert journal_with_entries.new_attr == "работает"
+
+
+#Проверка edit_entry
+def test_edit_entry(journal_with_entries, tmpdir):
+    journal_with_entries.edit_entry(1, "Изменённая задача")
+    assert journal_with_entries.entries == ["Задача 1", "Изменённая задача", "Задача 3"]
+
+    #Проверяем, что изменения сохранились в файл
+    with open(journal_with_entries.path_todo, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    assert data["todos"] == ["Задача 1", "Изменённая задача", "Задача 3"]
+
+    #Проверка выхода за границы
+    with pytest.raises(IndexError):
+        journal_with_entries.edit_entry(10, "несуществующая")
