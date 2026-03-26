@@ -39,3 +39,48 @@ def get_config_path() -> str:
     config_dir = get_config_directory()
     return os.path.join(config_dir, CONFIG_FILENAME)
 
+
+#Загружает конфигурацию из config.yaml + touch
+def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
+    if config_path is None:
+        config_path = get_config_path()
+
+    if not os.path.exists(config_path):
+        # Создаём конфиг по умолчанию
+        default_config = {
+            "current_journal": None,
+            "journals": {},   # имя -> путь
+            "editor": "notepad" if sys.platform == "win32" else "nano",
+        }
+        save_config(default_config, config_path)
+        return default_config
+
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+    except (yaml.YAMLError, OSError) as e:
+        raise TodoJournalError("ConfigNotFound",
+                               config_path=config_path) from e
+
+    # Гарантируем наличие необходимых полей
+    if "journals" not in config:
+        config["journals"] = {}
+    if "current_journal" not in config:
+        config["current_journal"] = None
+    if "editor" not in config:
+        config["editor"] = "notepad" if sys.platform == "win32" else "nano"
+
+    return config
+
+
+#Сохраняет конфигурацию в config.yaml
+def save_config(config: Dict[str, Any], config_path: Optional[str] = None) -> None:
+    if config_path is None:
+        config_path = get_config_path()
+
+    # Убедимся, что каталог существует
+    config_dir = os.path.dirname(config_path)
+    os.makedirs(config_dir, exist_ok=True)
+
+    with open(config_path, 'w', encoding='utf-8') as f:
+        yaml.dump(config, f, default_flow_style=False, allow_unicode=True, indent=2)
