@@ -7,6 +7,14 @@ from src import config
 from src.exceptions import TodoJournalError
 
 
+#Подмена os.makedirs на заглушку
+@pytest.fixture
+def mock_makedirs(monkeypatch):
+    def fake_makedirs(path, exist_ok=False):
+        pass
+    monkeypatch.setattr(os, "makedirs", fake_makedirs)
+
+
 #Проверка пути к каталогу
 def test_get_config_directory(monkeypatch):
     #Типо Windows
@@ -23,9 +31,21 @@ def test_get_config_directory(monkeypatch):
 
 
 #Проверка полного пути к файлу
-def test_get_config_path():
+def test_get_config_path(monkeypatch, mock_makedirs):
+    # Подменяем os.path.expanduser, чтобы не зависеть от реальной домашней папки
+    monkeypatch.setattr(os.path, "expanduser", lambda x: "/home/test")
+    monkeypatch.setattr("sys.platform", "linux")
     path = config.get_config_path()
     assert path.endswith("todo/config.yaml")
+    # Можно также проверить, что путь включает ожидаемую часть
+    assert "/home/test/.config/todo/config.yaml" in path
+
+    # Для Windows проверим, что путь корректен
+    monkeypatch.setattr("sys.platform", "win32")
+    monkeypatch.setenv("APPDATA", "C:\\Users\\Test\\AppData\\Roaming")
+    path = config.get_config_path()
+    assert path.endswith("todo\\config.yaml")
+    assert path.startswith("C:\\Users\\Test\\AppData\\Roaming\\todo")
 
 
 #Если конфига нет, он должен быть создан с настройками по умолчанию
