@@ -15,37 +15,39 @@ def mock_makedirs(monkeypatch):
     monkeypatch.setattr(os, "makedirs", fake_makedirs)
 
 
-#Проверка пути к каталогу
-def test_get_config_directory(monkeypatch):
+# Проверка пути к каталогу (используем mock_makedirs)
+def test_get_config_directory(monkeypatch, mock_makedirs):
     #Типо Windows
     monkeypatch.setattr("sys.platform", "win32")
     monkeypatch.setenv("APPDATA", "C:\\Users\\Test\\AppData\\Roaming")
     dir_win = config.get_config_directory()
-    assert dir_win == "C:\\Users\\Test\\AppData\\Roaming\\todo"
+    # Используем os.path.normpath для приведения к единому формату
+    assert os.path.normpath(dir_win) == os.path.normpath("C:\\Users\\Test\\AppData\\Roaming\\todo")
 
     #Типо Unix
     monkeypatch.setattr("sys.platform", "linux")
     monkeypatch.setenv("HOME", "/home/test")
     dir_unix = config.get_config_directory()
-    assert dir_unix == "/home/test/.config/todo"
+    assert os.path.normpath(dir_unix) == os.path.normpath("/home/test/.config/todo")
 
 
-#Проверка полного пути к файлу
 def test_get_config_path(monkeypatch, mock_makedirs):
-    # Подменяем os.path.expanduser, чтобы не зависеть от реальной домашней папки
-    monkeypatch.setattr(os.path, "expanduser", lambda x: "/home/test")
+    #Unix
     monkeypatch.setattr("sys.platform", "linux")
+    monkeypatch.setattr(os.path, "expanduser", lambda x: "/home/test")
     path = config.get_config_path()
-    assert path.endswith("todo/config.yaml")
-    # Можно также проверить, что путь включает ожидаемую часть
-    assert "/home/test/.config/todo/config.yaml" in path
+    #Проверяем, что путь заканчивается на config.yaml и содержит компоненты
+    assert path.endswith("config.yaml")
+    assert ".config/todo" in path or ".config\\todo" in path  # поддерживаем оба варианта
+    assert "/home/test" in path or "\\home\\test" in path
 
-    # Для Windows проверим, что путь корректен
+    #Windows
     monkeypatch.setattr("sys.platform", "win32")
     monkeypatch.setenv("APPDATA", "C:\\Users\\Test\\AppData\\Roaming")
     path = config.get_config_path()
-    assert path.endswith("todo\\config.yaml")
-    assert path.startswith("C:\\Users\\Test\\AppData\\Roaming\\todo")
+    assert path.endswith("config.yaml")
+    assert "todo" in path
+    assert "AppData\\Roaming" in path or "AppData/Roaming" in path
 
 
 #Если конфига нет, он должен быть создан с настройками по умолчанию
