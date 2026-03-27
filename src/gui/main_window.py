@@ -34,3 +34,57 @@ class MainWindow(tk.Tk):
 
         self.refresh_list()
 
+    #Обновить отображение списка задач
+    def refresh_list(self):
+        self.listbox.delete(0, tk.END)
+        for i, task in enumerate(self.journal.entries, start=1):
+            self.listbox.insert(tk.END, f"{i}. {task}")
+        self.status.config(text=f"Всего задач: {len(self.journal.entries)}")
+
+    def add_task(self):
+        dialog = AddEditDialog(self, title="Добавить задачу")
+        if dialog.result:
+            try:
+                self.journal.add_entry(dialog.result)
+                logger.info(f"Добавлена задача: {dialog.result}")
+                self.refresh_list()
+            except Exception as e:
+                logger.exception("Ошибка при добавлении")
+                messagebox.showerror("Ошибка", f"Не удалось добавить задачу:\n{e}")
+
+    def edit_task(self):
+        selection = self.listbox.curselection()
+        if not selection:
+            messagebox.showinfo("Информация", "Выберите задачу для редактирования")
+            return
+        idx = selection[0]
+        old_text = self.journal.entries[idx]
+        dialog = AddEditDialog(self, title="Редактировать задачу", initial_text=old_text)
+        if dialog.result and dialog.result != old_text:
+            try:
+                self.journal.edit_entry(idx, dialog.result)
+                logger.info(f"Изменена задача {idx+1}: {old_text} -> {dialog.result}")
+                self.refresh_list()
+            except Exception as e:
+                logger.exception("Ошибка при редактировании")
+                messagebox.showerror("Ошибка", f"Не удалось изменить задачу:\n{e}")
+
+    def delete_task(self):
+        selection = self.listbox.curselection()
+        if not selection:
+            messagebox.showinfo("Информация", "Выберите задачу для удаления")
+            return
+        idx = selection[0]
+        task_text = self.journal.entries[idx]
+        if messagebox.askyesno("Подтверждение", f"Удалить задачу:\n{task_text}?"):
+            try:
+                self.journal.remove_entry(idx)
+                logger.info(f"Удалена задача {idx+1}: {task_text}")
+                self.refresh_list()
+            except Exception as e:
+                logger.exception("Ошибка при удалении")
+                messagebox.showerror("Ошибка", f"Не удалось удалить задачу:\n{e}")
+
+    def open_settings(self):
+        #TODO: окно настроек
+        messagebox.showinfo("Информация", "Настройки пока не реализованы")
