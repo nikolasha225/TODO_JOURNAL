@@ -55,23 +55,28 @@ def main():
 
 #Выбрать или создать журнал
 def select_or_create_journal():
+    #Временное корневое окно для диалогов
     root = Tk()
-    root.withdraw()  # Скрыть главное окно
-
-    choice = messagebox.askyesno("Выбор журнала", "Создать новый журнал?\nНажмите 'Да' для создания, 'Нет' для открытия существующего.")
+    root.withdraw()
+    choice = messagebox.askyesno(
+        "Выбор журнала",
+        "Создать новый журнал?\nНажмите 'Да' для создания, 'Нет' для открытия существующего.",
+        parent=root
+    )
     if choice:
-        # Создание нового журнала
-        name = simpledialog.askstring("Название журнала", "Введите название журнала:")
+        name = simpledialog.askstring("Название журнала", "Введите название журнала:", parent=root)
         if not name:
+            root.destroy()
             return None
-        # Предложить сохранить файл
         default_filename = f"todo_{name}.json"
         file_path = filedialog.asksaveasfilename(
             defaultextension=".json",
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
             initialfile=default_filename,
-            title="Сохранить журнал как"
+            title="Сохранить журнал как",
+            parent=root
         )
+        root.destroy()
         if not file_path:
             return None
         try:
@@ -81,11 +86,12 @@ def select_or_create_journal():
             messagebox.showerror("Ошибка", f"Не удалось создать журнал:\n{e}")
             return None
     else:
-        # Открыть существующий журнал
         file_path = filedialog.askopenfilename(
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
-            title="Выберите файл журнала"
+            title="Выберите файл журнала",
+            parent=root
         )
+        root.destroy()
         if not file_path:
             return None
         return file_path
