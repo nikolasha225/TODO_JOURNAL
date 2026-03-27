@@ -1,7 +1,7 @@
 import sys
-
-from config import save_config
-from src.config import load_config, get_config_path
+import json
+from tkinter import Tk, messagebox, filedialog
+from src.config import load_config, get_config_path, save_config
 from src.logger import setup_logging, get_logger
 from src.exceptions import TodoJournalError
 from src.todo_journal import TodoJournal
@@ -53,22 +53,29 @@ def main():
 
 #Выбрать или создать журнал
 def select_or_create_journal():
-    from tkinter import Tk, filedialog, messagebox
     root = Tk()
-    root.withdraw()  # скрыть главное окно
+    root.withdraw()
     choice = messagebox.askyesno("Журнал не найден",
                                   "У вас нет текущего журнала. Хотите выбрать существующий? (Да - выбрать, Нет - создать новый)")
     if choice:
         # Выбрать существующий
-        file_path = filedialog.askopenfilename(
-            title="Выберите файл журнала",
-            filetypes=[("JSON files", "*.json"), ("Todo files", "*.todo"), ("All files", "*.*")]
-        )
-        if file_path:
-            return file_path
-        else:
-            # пользователь отменил
-            return None
+        while True:
+            file_path = filedialog.askopenfilename(
+                title="Выберите файл журнала",
+                filetypes=[("JSON files", "*.json"), ("Todo files", "*.todo"), ("All files", "*.*")]
+            )
+            if not file_path:
+                return None
+            try:
+                # Проверяем, что файл корректен
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                if "name" in data and "todos" in data:
+                    return file_path
+                else:
+                    messagebox.showerror("Ошибка", "Файл не является корректным журналом todo.")
+            except Exception as e:
+                messagebox.showerror("Ошибка", f"Не удалось открыть файл:\n{e}")
     else:
         # Создать новый
         file_path = filedialog.asksaveasfilename(
@@ -76,13 +83,12 @@ def select_or_create_journal():
             defaultextension=".todo",
             filetypes=[("Todo files", "*.todo"), ("JSON files", "*.json")]
         )
-        if file_path:
-            name = filedialog.askstring("Название журнала", "Введите название журнала:")
-            if name:
-                TodoJournal.create(file_path, name)
-                return file_path
-            else:
-                return None
+        if not file_path:
+            return None
+        name = filedialog.askstring("Название журнала", "Введите название журнала:")
+        if name:
+            TodoJournal.create(file_path, name)
+            return file_path
         else:
             return None
 
