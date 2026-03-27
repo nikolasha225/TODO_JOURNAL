@@ -56,52 +56,39 @@ def main():
 #Выбрать или создать журнал
 def select_or_create_journal():
     root = Tk()
-    root.withdraw()
+    root.withdraw()  # Скрыть главное окно
 
-    choice = messagebox.askyesno("Журнал", "Создать новый журнал? (Да - создать, Нет - выбрать существующий)")
+    choice = messagebox.askyesno("Выбор журнала", "Создать новый журнал?\nНажмите 'Да' для создания, 'Нет' для открытия существующего.")
     if choice:
-        # Создать новый
+        # Создание нового журнала
         name = simpledialog.askstring("Название журнала", "Введите название журнала:")
         if not name:
             return None
-        # Запрашиваем путь для сохранения
-        initial_dir = os.path.expanduser("~")
-        filename = filedialog.asksaveasfilename(
-            title="Сохранить журнал как",
-            defaultextension=".todo",
-            filetypes=[("Todo files", "*.todo"), ("All files", "*.*")],
-            initialdir=initial_dir,
-            initialfile=f"{name}.todo"
+        # Предложить сохранить файл
+        default_filename = f"todo_{name}.json"
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            initialfile=default_filename,
+            title="Сохранить журнал как"
         )
-        if not filename:
+        if not file_path:
             return None
         try:
-            TodoJournal.create(filename, name)
-            logger.info(f"Создан новый журнал: {filename} (название: {name})")
-            return filename
+            TodoJournal.create(file_path, name)
+            return file_path
         except Exception as e:
-            logger.exception("Ошибка создания журнала")
             messagebox.showerror("Ошибка", f"Не удалось создать журнал:\n{e}")
             return None
     else:
-        # Выбрать существующий
-        initial_dir = os.path.expanduser("~")
-        filename = filedialog.askopenfilename(
-            title="Выберите файл журнала",
-            filetypes=[("Todo files", "*.todo"), ("All files", "*.*")],
-            initialdir=initial_dir
+        # Открыть существующий журнал
+        file_path = filedialog.askopenfilename(
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            title="Выберите файл журнала"
         )
-        if not filename:
+        if not file_path:
             return None
-        # Проверим, что файл имеет правильный формат (попробуем открыть)
-        try:
-            TodoJournal(filename)
-            logger.info(f"Выбран существующий журнал: {filename}")
-            return filename
-        except TodoJournalError as e:
-            logger.exception("Ошибка открытия журнала")
-            messagebox.showerror("Ошибка", f"Файл не является корректным журналом:\n{e.message}")
-            return None
+        return file_path
 
 if __name__ == "__main__":
     main()
