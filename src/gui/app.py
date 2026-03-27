@@ -3,6 +3,7 @@ from src.config import load_config, get_config_path
 from src.logger import setup_logging, get_logger
 from src.exceptions import TodoJournalError
 from src.todo_journal import TodoJournal
+from src.gui.main_window import MainWindow
 
 #Основная функция программы
 def main():
@@ -36,7 +37,10 @@ def main():
         print(e.message)
         sys.exit(1)
 
-    #TODO: запуск GUI
+    #Запуск GUI
+    app = MainWindow(journal)
+    app.mainloop()
+
     print("Запуск GUI пока не реализован")
     logger.info("Приложение завершено")
 
