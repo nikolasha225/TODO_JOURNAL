@@ -65,9 +65,7 @@ class MainWindow(tk.Tk):
             return
         idx = selection[0]
         old_text = self.journal.entries[idx]
-        logger.debug(f"Editing task {idx}: {old_text}")
         dialog = AddEditDialog(self, title="Редактировать задачу", initial_text=old_text)
-        logger.debug(f"after dialog, result={dialog.result}")
         self.wait_window(dialog)
         logger.debug(f"after dialog, result={dialog.result}")
         if dialog.result and dialog.result != old_text:
