@@ -57,9 +57,11 @@ class TodoJournal:
 
     #Редактирование задачи по индексу
     def edit_entry(self, index: int, new_text: str) -> None:
+        logger.debug(f"edit_entry called: index={index}, new_text={new_text}")
         if 0 <= index < len(self.entries):
             self.entries[index] = new_text
             self._update({'name': self.name, 'todos': self.entries})
+            logger.debug("edit_entry updated")
         else:
             raise IndexError(f"Индекс {index} вне диапазона")
 

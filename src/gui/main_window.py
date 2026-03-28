@@ -58,17 +58,23 @@ class MainWindow(tk.Tk):
                 messagebox.showerror("Ошибка", f"Не удалось добавить задачу:\n{e}")
 
     def edit_task(self):
+        logger.debug("edit_task called")
         selection = self.listbox.curselection()
+        logger.debug(f"selection = {selection}")
         if not selection:
+            logger.debug("No selection")
             messagebox.showinfo("Информация", "Выберите задачу для редактирования")
             return
         idx = selection[0]
         old_text = self.journal.entries[idx]
+        logger.debug(f"Editing task {idx}: {old_text}")
         dialog = AddEditDialog(self, title="Редактировать задачу", initial_text=old_text)
+        logger.debug(f"after dialog, result={dialog.result}")
         if dialog.result and dialog.result != old_text:
             try:
+                logger.info(f"Попытка изменить задачу {idx + 1}: {old_text} -> {dialog.result}")
                 self.journal.edit_entry(idx, dialog.result)
-                logger.info(f"Изменена задача {idx+1}: {old_text} -> {dialog.result}")
+                logger.info(f"Задача изменена")
                 self.refresh_list()
             except Exception as e:
                 logger.exception("Ошибка при редактировании")
