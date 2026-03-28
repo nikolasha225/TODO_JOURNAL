@@ -4,9 +4,7 @@
 import json
 import sys
 from typing import Dict, List, Union, NoReturn, Iterator, Any
-
-from gui.main_window import logger
-
+from src import logger
 
 #==============Класс для управления журналом===================
 class TodoJournal:
