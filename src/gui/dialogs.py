@@ -1,5 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+from src.logger import get_logger
+
+logger = get_logger()
 
 class AddEditDialog(tk.Toplevel):
     def __init__(self, parent, title="Введите задачу", initial_text=""):
@@ -28,12 +31,15 @@ class AddEditDialog(tk.Toplevel):
 
     def on_ok(self):
         self.result = self.entry.get().strip()
+        logger.debug(f"on_ok: result={self.result}")
         if not self.result:
             messagebox.showwarning("Предупреждение", "Задача не может быть пустой")
             return
         self.destroy()
 
     def on_cancel(self):
+        logger.debug("on_cancel called")
+        self.result = None
         self.destroy()
 
 

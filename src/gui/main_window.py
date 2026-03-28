@@ -45,6 +45,7 @@ class MainWindow(tk.Tk):
     def add_task(self):
         logger.debug("Вызвана add_task")
         dialog = AddEditDialog(self, title="Добавить задачу")
+        logger.debug(f"after dialog, result={dialog.result}")
         if dialog.result:
             try:
                 logger.info(f"Попытка добавить задачу: {dialog.result}")

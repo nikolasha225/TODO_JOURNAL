@@ -4,7 +4,9 @@
 import json
 import sys
 from typing import Dict, List, Union, NoReturn, Iterator, Any
-from src import logger
+from src.logger import get_logger
+
+logger = get_logger()
 
 #==============Класс для управления журналом===================
 class TodoJournal:
