@@ -5,6 +5,9 @@ import json
 import sys
 from typing import Dict, List, Union, NoReturn, Iterator, Any
 
+from gui.main_window import logger
+
+
 #==============Класс для управления журналом===================
 class TodoJournal:
 
@@ -28,9 +31,11 @@ class TodoJournal:
             sys.exit(1)
 
     # Запись данных в файл
-    def _update(self, new_data: Dict[str, Union[str, List[str]]]) -> None:
+    def _update(self, new_data: dict) -> None:
+        logger.debug(f"Запись в файл {self.path_todo}: {new_data}")
         with open(self.path_todo, 'w', encoding='utf-8') as f:
             json.dump(new_data, f, sort_keys=True, indent=4, ensure_ascii=False)
+        logger.debug("Запись завершена")
 
     #Создание нового пустого журнала (единоразовый метод)
     @staticmethod
@@ -40,7 +45,9 @@ class TodoJournal:
 
     # Добавление задачи
     def add_entry(self, new_entry: str) -> None:
+        logger.debug(f"add_entry: {new_entry}, текущий список: {self.entries}")
         self.entries.append(new_entry)
+        logger.debug(f"Новый список: {self.entries}")
         self._update({'name': self.name, 'todos': self.entries})
 
     #Удаление задачи по индексу

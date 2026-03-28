@@ -36,17 +36,20 @@ class MainWindow(tk.Tk):
 
     #Обновить отображение списка задач
     def refresh_list(self):
+        logger.debug(f"Обновление списка, записей: {len(self.journal.entries)}")
         self.listbox.delete(0, tk.END)
         for i, task in enumerate(self.journal.entries, start=1):
             self.listbox.insert(tk.END, f"{i}. {task}")
         self.status.config(text=f"Всего задач: {len(self.journal.entries)}")
 
     def add_task(self):
+        logger.debug("Вызвана add_task")
         dialog = AddEditDialog(self, title="Добавить задачу")
         if dialog.result:
             try:
+                logger.info(f"Попытка добавить задачу: {dialog.result}")
                 self.journal.add_entry(dialog.result)
-                logger.info(f"Добавлена задача: {dialog.result}")
+                logger.info(f"Задача добавлена: {dialog.result}")
                 self.refresh_list()
             except Exception as e:
                 logger.exception("Ошибка при добавлении")
