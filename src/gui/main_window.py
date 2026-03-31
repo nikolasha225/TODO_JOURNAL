@@ -308,5 +308,10 @@ class MainWindow(tk.Tk):
                 messagebox.showerror("Ошибка", f"Не удалось удалить задачу:\n{e}")
 
     def open_settings(self):
-        #TODO: окно настроек
-        messagebox.showinfo("Информация", "Настройки пока не реализованы")
+        dialog = SettingsDialog(self, self.config, self.config_path)
+        self.wait_window(dialog)
+        if dialog.result:
+            # Обновляем локальную копию конфига
+            self.config = dialog.result
+            logger.debug("Настройки обновлены")
+            # Если нужно, можно обновить интерфейс (например, перечитать редактор)
