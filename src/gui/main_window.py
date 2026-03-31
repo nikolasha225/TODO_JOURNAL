@@ -52,9 +52,9 @@ class MainWindow(tk.Tk):
         self.refresh_journal_list()
         self.refresh_list()
 
-    #Обновить отображение списка задач
-    def refresh_list(self):
-        logger.debug(f"Обновление списка, записей: {len(self.journal.entries)}")
+    #---------Журналы-----------
+    #обновляет список журналов в комбобоксе
+    def refresh_journal_list(self):
         names = list(self.config["journals"].keys())
         self.journal_combo['values'] = names
         current = self.config.get("current_journal")
@@ -147,6 +147,7 @@ class MainWindow(tk.Tk):
             self.refresh_journal_list()
             self.refresh_list()
 
+    #-------------тудушки----------------
     #Добавить задачу
     def add_task(self):
         logger.debug("Вызвана add_task")
@@ -162,6 +163,17 @@ class MainWindow(tk.Tk):
             except Exception as e:
                 logger.exception("Ошибка при добавлении")
                 messagebox.showerror("Ошибка", f"Не удалось добавить задачу:\n{e}")
+
+    #Обновить отображение списка задач
+    def refresh_list(self):
+        logger.debug(f"Обновление списка, записей: {len(self.journal.entries)}")
+        names = list(self.config["journals"].keys())
+        self.journal_combo['values'] = names
+        current = self.config.get("current_journal")
+        if current in names:
+            self.journal_var.set(current)
+        else:
+            self.journal_var.set("")
 
     def edit_task(self):
         logger.debug("edit_task called")
