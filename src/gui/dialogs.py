@@ -9,16 +9,20 @@ class AddEditDialog(tk.Toplevel):
         super().__init__(parent)
         self.title(title)
         self.result = None
-        self.geometry("400x150")
+        self.geometry("500x300")
 
-        # Текстовое поле
+        # Текстовое поле (многострочное)
         label = ttk.Label(self, text="Текст задачи:")
         label.pack(pady=5)
-        self.entry = ttk.Entry(self, width=50)
-        self.entry.insert(0, initial_text)
-        self.entry.pack(pady=5)
-        self.entry.focus_set()
-        self.entry.select_range(0, tk.END)
+        self.text = tk.Text(self, wrap=tk.WORD, height=10, width=60)
+        self.text.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
+        self.text.insert("1.0", initial_text)
+        self.text.focus_set()
+
+        # Добавляем прокрутку
+        scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.text.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.text.configure(yscrollcommand=scrollbar.set)
 
         # Кнопки
         btn_frame = ttk.Frame(self)
@@ -30,7 +34,7 @@ class AddEditDialog(tk.Toplevel):
         self.bind("<Escape>", lambda e: self.on_cancel())
 
     def on_ok(self):
-        self.result = self.entry.get().strip()
+        self.result = self.text.get("1.0", tk.END).strip()
         logger.debug(f"on_ok: result={self.result}")
         if not self.result:
             messagebox.showwarning("Предупреждение", "Задача не может быть пустой")
@@ -41,7 +45,6 @@ class AddEditDialog(tk.Toplevel):
         logger.debug("on_cancel called")
         self.result = None
         self.destroy()
-
 
 class SettingsDialog(tk.Toplevel):
     def __init__(self, parent, config):

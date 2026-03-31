@@ -220,7 +220,9 @@ class MainWindow(tk.Tk):
         logger.debug(f"Обновление списка, записей: {len(self.journal.entries)}")
         self.listbox.delete(0, tk.END)
         for i, task in enumerate(self.journal.entries, start=1):
-            self.listbox.insert(tk.END, f"{i}. {task}")
+            # Показываем первую строку задачи
+            first_line = task.split('\n')[0]
+            self.listbox.insert(tk.END, f"{i}. {first_line}")
         self.status.config(text=f"Всего задач: {len(self.journal.entries)}")
 
     #Обычный эдит таск
@@ -294,11 +296,12 @@ class MainWindow(tk.Tk):
             messagebox.showinfo("Информация", "Выберите задачу для удаления")
             return
         idx = selection[0]
-        task_text = self.journal.entries[idx]
-        if messagebox.askyesno("Подтверждение", f"Удалить задачу:\n{task_text}?"):
+        full_text = self.journal.entries[idx]
+        first_line = full_text.split('\n')[0]
+        if messagebox.askyesno("Подтверждение", f"Удалить задачу:\n{first_line}?"):
             try:
                 self.journal.remove_entry(idx)
-                logger.info(f"Удалена задача {idx+1}: {task_text}")
+                logger.info(f"Удалена задача {idx + 1}: {first_line}")
                 self.refresh_list()
             except Exception as e:
                 logger.exception("Ошибка при удалении")
