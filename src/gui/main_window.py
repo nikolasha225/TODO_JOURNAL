@@ -5,7 +5,9 @@ from src.todo_journal import TodoJournal
 from src.logger import get_logger
 from src.gui.dialogs import AddEditDialog, SettingsDialog
 import json
-
+import tempfile
+import subprocess
+import os
 logger = get_logger()
 
 #Главное окно проги
@@ -41,11 +43,18 @@ class MainWindow(tk.Tk):
         button_frame = ttk.Frame(self)
         button_frame.pack(pady=5)
         ttk.Button(button_frame, text="Добавить", command=self.add_task).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Редактировать", command=self.edit_task).pack(side=tk.LEFT, padx=5)
+
+        # Кнопка с выпадающим меню для редактирования
+        self.edit_menubutton = ttk.Menubutton(button_frame, text="Редактировать")
+        self.edit_menu = tk.Menu(self.edit_menubutton, tearoff=0)
+        self.edit_menu.add_command(label="Встроенный редактор", command=self.edit_task_internal)
+        self.edit_menu.add_command(label="Внешний редактор", command=self.edit_task_external)
+        self.edit_menubutton.configure(menu=self.edit_menu)
+        self.edit_menubutton.pack(side=tk.LEFT, padx=5)
+
         ttk.Button(button_frame, text="Удалить", command=self.delete_task).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Обновить", command=self.refresh_list).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Настройки", command=self.open_settings).pack(side=tk.LEFT, padx=5)
-
         #Статусная строка
         self.status = tk.Label(self, text="Готов", bd=1, relief=tk.SUNKEN, anchor=tk.W)
         self.status.pack(side=tk.BOTTOM, fill=tk.X)
@@ -214,8 +223,8 @@ class MainWindow(tk.Tk):
             self.listbox.insert(tk.END, f"{i}. {task}")
         self.status.config(text=f"Всего задач: {len(self.journal.entries)}")
 
-    def edit_task(self):
-        logger.debug("edit_task called")
+    #Обычный эдит таск
+    def edit_task_internal(self):
         selection = self.listbox.curselection()
         if not selection:
             messagebox.showinfo("Информация", "Выберите задачу для редактирования")
@@ -224,7 +233,6 @@ class MainWindow(tk.Tk):
         old_text = self.journal.entries[idx]
         dialog = AddEditDialog(self, title="Редактировать задачу", initial_text=old_text)
         self.wait_window(dialog)
-        logger.debug(f"after dialog, result={dialog.result}")
         if dialog.result and dialog.result != old_text:
             try:
                 logger.info(f"Попытка изменить задачу {idx + 1}: {old_text} -> {dialog.result}")
@@ -234,6 +242,51 @@ class MainWindow(tk.Tk):
             except Exception as e:
                 logger.exception("Ошибка при редактировании")
                 messagebox.showerror("Ошибка", f"Не удалось изменить задачу:\n{e}")
+
+    #Редактирование задачи во внешнем редакторе
+    def edit_task_external(self):
+        selection = self.listbox.curselection()
+        if not selection:
+            messagebox.showinfo("Информация", "Выберите задачу для редактирования")
+            return
+        idx = selection[0]
+        task_text = self.journal.entries[idx]
+
+        # Получаем редактор из конфига
+        editor = self.config.get("editor")
+        if not editor:
+            messagebox.showerror("Ошибка", "Редактор не задан в настройках.\nЗадайте его в файле конфигурации.")
+            return
+
+        # Создаём временный файл
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+            f.write(task_text)
+            temp_path = f.name
+
+        try:
+            # Запускаем редактор
+            subprocess.run([editor, temp_path], check=True)
+            # Читаем изменённый текст
+            with open(temp_path, 'r', encoding='utf-8') as f:
+                new_text = f.read().strip()
+            if new_text and new_text != task_text:
+                self.journal.edit_entry(idx, new_text)
+                logger.info(f"Задача {idx + 1} изменена внешним редактором: {task_text} -> {new_text}")
+                self.refresh_list()
+            elif not new_text:
+                messagebox.showwarning("Предупреждение", "Задача не может быть пустой. Изменения отменены.")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Ошибка запуска редактора: {e}")
+            messagebox.showerror("Ошибка", f"Не удалось открыть редактор:\n{e}")
+        except Exception as e:
+            logger.exception("Ошибка при внешнем редактировании")
+            messagebox.showerror("Ошибка", f"Не удалось отредактировать задачу:\n{e}")
+        finally:
+            # Удаляем временный файл
+            try:
+                os.unlink(temp_path)
+            except OSError:
+                pass
 
     def delete_task(self):
         selection = self.listbox.curselection()
