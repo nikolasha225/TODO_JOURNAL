@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "todo-gui"
 version = "0.1.0"
-description = "A simple todo application with GUI (Tkinter)"
-authors = ["Ваше Имя <your.email@example.com>"]
+description = "Simple todo application with GUI(Tkinter)"
+authors = ["Ducktor74"]
 license = "MIT"
 readme = "README.md"
 package-mode = false
@@ -10,9 +10,7 @@ package-mode = false
 [tool.poetry.dependencies]
 python = "^3.11"                    # совместимость с Python 3.8 и выше
 pyyaml = "^6.0"                     # для работы с YAML-конфигами
-#python-xdg = ">=0.28"         # поддержка XDG Base Directory
-# urllib3 = "^2.0"                  # если нужен для Gitlab (опционально)
-# python-gitlab = "^4.0"            # если интеграция с Gitlab (опционально)
+
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0"
@@ -39,6 +37,3 @@ exclude_lines = [
     "pragma: no cover"
 ]
 
-[tool.pylint.main]
-# Необязательные настройки pylint
-# ignore = ["tests"]

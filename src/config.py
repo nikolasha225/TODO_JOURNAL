@@ -14,7 +14,7 @@ CONFIG_FILENAME = "config.yaml"
 
 
 #Возвращает путь к кфг КАТАЛОГУ
-    #Windows -> %APPDATA%\\tod o "(туду вместе писать нельзя иначе не коммитится)
+    #Windows -> %APPDATA%\\tod o "(туду вместе писать нельзя иначе считается за тудушку)
     #Unix -> ~/.config/tod o
 def get_config_directory() -> str:
     if sys.platform == "win32":
