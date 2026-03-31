@@ -1,7 +1,7 @@
 import sys
 import os
 from tkinter import Tk, messagebox, simpledialog, filedialog
-from src.config import load_config, get_config_path, save_config
+from src.config import load_config, get_config_path, save_config, add_journal, set_current_journal
 from src.logger import setup_logging, get_logger
 from src.exceptions import TodoJournalError
 from src.todo_journal import TodoJournal
@@ -11,7 +11,6 @@ import src.logger
 #Основная функция программы
 def main():
     setup_logging("logging.ini")
-    logger = get_logger()
     logger.info("Запуск приложения")
 
     # Загружаем конфигурацию
@@ -23,78 +22,63 @@ def main():
         print(e.message)
         sys.exit(1)
 
-    journal_path = config_data.get("current_journal")
-    if not journal_path or not os.path.exists(journal_path):
-        logger.info("Текущий журнал не задан или не существует, предлагаем выбрать/создать")
-        journal_path = select_or_create_journal()
-        if not journal_path:
-            logger.warning("Пользователь не выбрал журнал, выход")
+    # Если в конфиге нет журналов, предложим создать первый
+    if not config_data["journals"]:
+        # Показать диалог создания журнала (можно вынести в функцию)
+        from tkinter import Tk, messagebox, simpledialog, filedialog
+        root = Tk()
+        root.withdraw()
+        if messagebox.askyesno("Первый запуск", "У вас нет ни одного журнала. Создать первый?"):
+            name = simpledialog.askstring("Название", "Введите название журнала:")
+            if name:
+                file_path = filedialog.asksaveasfilename(
+                    defaultextension=".json",
+                    filetypes=[("JSON files", "*.json")],
+                    initialfile=f"todo_{name}.json",
+                    title="Сохранить журнал"
+                )
+                if file_path:
+                    TodoJournal.create(file_path, name)
+                    config_data = add_journal(config_data, name, file_path)
+                    config_data = set_current_journal(config_data, name)
+                    save_config(config_data, config_path)
+                else:
+                    logger.info("Создание журнала отменено")
+                    return
+            else:
+                logger.info("Создание журнала отменено")
+                return
+        else:
+            logger.info("Пользователь не захотел создавать журнал")
             return
-        # Сохраняем выбранный путь в конфиг
-        config_data["current_journal"] = journal_path
-        try:
+        root.destroy()
+
+    # Получаем путь к текущему журналу
+    current_name = config_data.get("current_journal")
+    if not current_name:
+        # Если нет текущего, но есть журналы, выбираем первый
+        current_name = next(iter(config_data["journals"].keys()), None)
+        if current_name:
+            config_data = set_current_journal(config_data, current_name)
             save_config(config_data, config_path)
-            logger.info(f"Путь к журналу сохранён в конфиг: {journal_path}")
-        except Exception as e:
-            logger.exception("Ошибка сохранения конфига")
-            messagebox.showerror("Ошибка", f"Не удалось сохранить путь в конфигурацию:\n{e}")
+        else:
+            logger.error("Нет доступных журналов")
+            sys.exit(1)
+
+    journal_path = config_data["journals"][current_name]
 
     # Создаём объект TodoJournal
     try:
         journal = TodoJournal(journal_path)
     except TodoJournalError as e:
         logger.error(f"Ошибка открытия журнала: {e.message}")
-        messagebox.showerror("Ошибка", e.message)
+        messagebox.showerror("Ошибка", f"Не удалось открыть журнал:\n{e.message}")
         sys.exit(1)
 
-    # Запуск GUI
-    app = MainWindow(journal)
+    # Запуск GUI – передаём конфигурацию
+    app = MainWindow(journal, config_data, config_path)
     app.mainloop()
-
     logger.info("Приложение завершено")
-
-#Выбрать или создать журнал
-def select_or_create_journal():
-    #Временное корневое окно для диалогов
-    root = Tk()
-    root.withdraw()
-    choice = messagebox.askyesno(
-        "Выбор журнала",
-        "Создать новый журнал?\nНажмите 'Да' для создания, 'Нет' для открытия существующего.",
-        parent=root
-    )
-    if choice:
-        name = simpledialog.askstring("Название журнала", "Введите название журнала:", parent=root)
-        if not name:
-            root.destroy()
-            return None
-        default_filename = f"todo_{name}.json"
-        file_path = filedialog.asksaveasfilename(
-            defaultextension=".json",
-            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
-            initialfile=default_filename,
-            title="Сохранить журнал как",
-            parent=root
-        )
-        root.destroy()
-        if not file_path:
-            return None
-        try:
-            TodoJournal.create(file_path, name)
-            return file_path
-        except Exception as e:
-            messagebox.showerror("Ошибка", f"Не удалось создать журнал:\n{e}")
-            return None
-    else:
-        file_path = filedialog.askopenfilename(
-            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
-            title="Выберите файл журнала",
-            parent=root
-        )
-        root.destroy()
-        if not file_path:
-            return None
-        return file_path
 
 if __name__ == "__main__":
     main()

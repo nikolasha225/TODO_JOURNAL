@@ -84,3 +84,26 @@ def save_config(config: Dict[str, Any], config_path: Optional[str] = None) -> No
 
     with open(config_path, 'w', encoding='utf-8') as f:
         yaml.dump(config, f, default_flow_style=False, allow_unicode=True, indent=2)
+
+#Добавляет журнал в конфиг (или перезаписывает=])
+def add_journal(config: dict, name: str, path: str) -> dict:
+    config["journals"][name] = path
+    return config
+
+#Удаляет журнал из конфига. если журнал был текущим обнуляет current_journal
+def remove_journal(config: dict, name: str) -> dict:
+    if name in config["journals"]:
+        del config["journals"][name]
+    if config.get("current_journal") == name:
+        config["current_journal"] = None
+    return config
+
+#Устанавливает текущий журнал. если имя не найдено, возвращает config не меняя
+def set_current_journal(config: dict, name: str) -> dict:
+    if name in config["journals"]:
+        config["current_journal"] = name
+    return config
+
+#Возвращает путь к журналу по имени
+def get_journal_path(config: dict, name: str) -> str | None:
+    return config["journals"].get(name)
