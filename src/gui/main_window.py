@@ -4,6 +4,7 @@ from src.config import add_journal, remove_journal, set_current_journal, get_jou
 from src.todo_journal import TodoJournal
 from src.logger import get_logger
 from src.gui.dialogs import AddEditDialog, SettingsDialog
+import json
 
 logger = get_logger()
 
@@ -29,6 +30,7 @@ class MainWindow(tk.Tk):
         self.journal_combo.bind("<<ComboboxSelected>>", self.on_journal_change)
 
         ttk.Button(self.top_frame, text="Создать", command=self.create_journal).pack(side=tk.LEFT, padx=2)
+        ttk.Button(self.top_frame, text="Открыть", command=self.open_existing_journal).pack(side=tk.LEFT, padx=2)
         ttk.Button(self.top_frame, text="Удалить", command=self.delete_journal).pack(side=tk.LEFT, padx=2)
 
         #Список задач
@@ -62,6 +64,46 @@ class MainWindow(tk.Tk):
             self.journal_var.set(current)
         else:
             self.journal_var.set("")
+
+    #Открыть существующий файл журнала и добавить его в конфиг
+    def open_existing_journal(self):
+        from tkinter import filedialog
+        file_path = filedialog.askopenfilename(
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            title="Выберите файл журнала"
+        )
+        if not file_path:
+            return
+        try:
+            # Проверяем, можно ли прочитать как журнал
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            if "name" not in data or "todos" not in data:
+                messagebox.showerror("Ошибка", "Файл не является корректным журналом Todo.")
+                return
+            name = data["name"]
+            # Если имя уже существует в конфиге, предложим другое
+            if name in self.config["journals"]:
+                name = simpledialog.askstring("Имя журнала",
+                                              f"Журнал с именем '{name}' уже существует. Введите другое имя:",
+                                              initialvalue=name + "_new")
+                if not name:
+                    return
+            # Добавляем в конфиг
+            self.config = add_journal(self.config, name, file_path)
+            self.config = set_current_journal(self.config, name)
+            from src.config import save_config
+            save_config(self.config, self.config_path)
+            # Загружаем журнал
+            self.journal = TodoJournal(file_path)
+            self.refresh_journal_list()
+            self.refresh_list()
+            logger.info(f"Открыт существующий журнал '{name}' из {file_path}")
+        except json.JSONDecodeError:
+            messagebox.showerror("Ошибка", "Файл не является корректным JSON.")
+        except Exception as e:
+            logger.exception("Ошибка при открытии журнала")
+            messagebox.showerror("Ошибка", f"Не удалось открыть журнал:\n{e}")
 
     #Обработчик выбора журнала
     def on_journal_change(self, event):
