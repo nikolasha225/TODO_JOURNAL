@@ -54,6 +54,7 @@ class MainWindow(tk.Tk):
 
         ttk.Button(button_frame, text="Удалить", command=self.delete_task).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Обновить", command=self.refresh_list).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Сортировать по дате", command=self.sort_by_date).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Настройки", command=self.open_settings).pack(side=tk.LEFT, padx=5)
         #Статусная строка
         self.status = tk.Label(self, text="Готов", bd=1, relief=tk.SUNKEN, anchor=tk.W)
@@ -201,15 +202,11 @@ class MainWindow(tk.Tk):
     #-------------тудушки----------------
     #Добавить задачу
     def add_task(self):
-        logger.debug("Вызвана add_task")
         dialog = AddEditDialog(self, title="Добавить задачу")
-        self.wait_window(dialog)  # Ждём, пока диалог не закроется
-        logger.debug(f"after dialog, result={dialog.result}")
+        self.wait_window(dialog)
         if dialog.result:
             try:
-                logger.info(f"Попытка добавить задачу: {dialog.result}")
-                self.journal.add_entry(dialog.result)
-                logger.info(f"Задача добавлена: {dialog.result}")
+                self.journal.add_entry(dialog.result["text"], dialog.result["due_date"])
                 self.refresh_list()
             except Exception as e:
                 logger.exception("Ошибка при добавлении")
@@ -217,29 +214,31 @@ class MainWindow(tk.Tk):
 
     #Обновить отображение списка задач
     def refresh_list(self):
-        logger.debug(f"Обновление списка, записей: {len(self.journal.entries)}")
         self.listbox.delete(0, tk.END)
-        for i, task in enumerate(self.journal.entries, start=1):
-            # Показываем первую строку задачи
-            first_line = task.split('\n')[0]
-            self.listbox.insert(tk.END, f"{i}. {first_line}")
+        for i, task in enumerate(self.journal.entries):
+            text = task["text"]
+            due = task["due_date"]
+            display = f"{i + 1}. {text}"
+            if due:
+                display += f" [{due}]"
+            self.listbox.insert(tk.END, display)
         self.status.config(text=f"Всего задач: {len(self.journal.entries)}")
 
     #Обычный эдит таск
     def edit_task_internal(self):
         selection = self.listbox.curselection()
         if not selection:
-            messagebox.showinfo("Информация", "Выберите задачу для редактирования")
             return
         idx = selection[0]
-        old_text = self.journal.entries[idx]
-        dialog = AddEditDialog(self, title="Редактировать задачу", initial_text=old_text)
+        old = self.journal.entries[idx]
+        dialog = AddEditDialog(self, title="Редактировать задачу",
+                               initial_text=old["text"], initial_due=old["due_date"] or "")
         self.wait_window(dialog)
-        if dialog.result and dialog.result != old_text:
+        if dialog.result:
             try:
-                logger.info(f"Попытка изменить задачу {idx + 1}: {old_text} -> {dialog.result}")
-                self.journal.edit_entry(idx, dialog.result)
-                logger.info(f"Задача изменена")
+                new_text = dialog.result["text"]
+                new_due = dialog.result["due_date"]
+                self.journal.edit_entry(idx, new_text, new_due)
                 self.refresh_list()
             except Exception as e:
                 logger.exception("Ошибка при редактировании")
@@ -311,3 +310,15 @@ class MainWindow(tk.Tk):
         from src.gui.dialogs import SettingsDialog
         SettingsDialog(self, self.config, self.config_path).wait_window()
         logger.debug("Настройки обновлены")
+
+    #Сортирует записи журнала по дате (None последними)
+    def sort_by_date(self):
+
+        def key_func(entry):
+            due = entry["due_date"]
+            # None -> ставим в конец
+            return (due is not None, due)
+
+        self.journal.entries.sort(key=key_func)
+        self.journal._update({'name': self.journal.name, 'todos': self.journal.entries})
+        self.refresh_list()

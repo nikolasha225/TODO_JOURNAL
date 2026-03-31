@@ -8,21 +8,26 @@ import os
 logger = get_logger()
 
 class AddEditDialog(tk.Toplevel):
-    def __init__(self, parent, title="Введите задачу", initial_text=""):
+    def __init__(self, parent, title="Введите задачу", initial_text="", initial_due=""):
         super().__init__(parent)
         self.title(title)
-        self.result = None
-        self.geometry("500x300")
+        self.result = None  # будет содержать {"text": ..., "due_date": ...}
+        self.geometry("500x350")
 
-        # Текстовое поле (многострочное)
-        label = ttk.Label(self, text="Текст задачи:")
-        label.pack(pady=5)
-        self.text = tk.Text(self, wrap=tk.WORD, height=10, width=60)
+        # Текст задачи
+        ttk.Label(self, text="Текст задачи:").pack(pady=5)
+        self.text = tk.Text(self, wrap=tk.WORD, height=8, width=60)
         self.text.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
         self.text.insert("1.0", initial_text)
         self.text.focus_set()
 
-        # Добавляем прокрутку
+        # Дата
+        ttk.Label(self, text="Дата (необязательно, формат YYYY-MM-DD):").pack(pady=5)
+        self.due_entry = ttk.Entry(self, width=20)
+        self.due_entry.insert(0, initial_due)
+        self.due_entry.pack(pady=5)
+
+        # Прокрутка для текста
         scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.text.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.text.configure(yscrollcommand=scrollbar.set)
@@ -33,19 +38,19 @@ class AddEditDialog(tk.Toplevel):
         ttk.Button(btn_frame, text="OK", command=self.on_ok).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Отмена", command=self.on_cancel).pack(side=tk.LEFT, padx=5)
 
-        self.text.bind("<Control-Return>", lambda e: self.on_ok())
+        self.bind("<Control-Return>", lambda e: self.on_ok())
         self.bind("<Escape>", lambda e: self.on_cancel())
 
     def on_ok(self):
-        self.result = self.text.get("1.0", tk.END).strip()
-        logger.debug(f"on_ok: result={self.result}")
-        if not self.result:
+        text = self.text.get("1.0", tk.END).strip()
+        due = self.due_entry.get().strip()
+        if not text:
             messagebox.showwarning("Предупреждение", "Задача не может быть пустой")
             return
+        self.result = {"text": text, "due_date": due if due else None}
         self.destroy()
 
     def on_cancel(self):
-        logger.debug("on_cancel called")
         self.result = None
         self.destroy()
 
