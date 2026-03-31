@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox
 
 from src.config import save_config
 from src.logger import get_logger
+import os
 
 logger = get_logger()
 
@@ -49,45 +50,50 @@ class AddEditDialog(tk.Toplevel):
         self.destroy()
 
 class SettingsDialog(tk.Toplevel):
-    def __init__(self, parent, config: dict, config_path: str):
+    def __init__(self, parent, config, config_path):
         super().__init__(parent)
         self.config = config
         self.config_path = config_path
         self.title("Настройки")
-        self.geometry("400x250")
-        self.resizable(False, False)
-        self.result = None  # будем возвращать обновлённый конфиг
+        self.geometry("450x200")
 
-        # Поле для редактора
+        # Editor selection
         ttk.Label(self, text="Редактор по умолчанию:").pack(pady=5)
-        self.editor_entry = ttk.Entry(self, width=40)
-        self.editor_entry.insert(0, config.get("editor", ""))
-        self.editor_entry.pack(pady=5)
+        editor_frame = ttk.Frame(self)
+        editor_frame.pack(fill=tk.X, padx=10)
+        self.editor_var = tk.StringVar(value=config.get("editor", ""))
+        self.editor_entry = ttk.Entry(editor_frame, textvariable=self.editor_var, width=40)
+        self.editor_entry.pack(side=tk.LEFT, padx=5, expand=True, fill=tk.X)
+        ttk.Button(editor_frame, text="Обзор...", command=self.browse_editor).pack(side=tk.LEFT)
 
-        # Кнопки
+        # Buttons
         btn_frame = ttk.Frame(self)
         btn_frame.pack(pady=20)
         ttk.Button(btn_frame, text="Сохранить", command=self.save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Отмена", command=self.cancel).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Отмена", command=self.destroy).pack(side=tk.LEFT, padx=5)
 
-        # Привязка клавиш
-        self.bind("<Return>", lambda e: self.save())
-        self.bind("<Escape>", lambda e: self.cancel())
+    def browse_editor(self):
+        # Open file picker for executable
+        from tkinter import filedialog
+        file_path = filedialog.askopenfilename(
+            title="Выберите редактор",
+            filetypes=[("Исполняемые файлы", "*.exe"), ("Все файлы", "*.*")] if os.name == 'nt' else [("Все файлы", "*.*")]
+        )
+        if file_path:
+            self.editor_var.set(file_path)
 
     def save(self):
-        new_editor = self.editor_entry.get().strip()
-        if new_editor:
-            self.config["editor"] = new_editor
-            try:
-                save_config(self.config, self.config_path)
-                logger.info(f"Обновлён редактор в конфиге: {new_editor}")
-                self.result = self.config
-                self.destroy()
-            except Exception as e:
-                logger.exception("Ошибка сохранения конфига")
-                messagebox.showerror("Ошибка", f"Не удалось сохранить настройки:\n{e}")
-        else:
-            messagebox.showwarning("Предупреждение", "Редактор не может быть пустым")
+        new_editor = self.editor_var.get().strip()
+        self.config["editor"] = new_editor if new_editor else None
+        try:
+            from src.config import save_config
+            save_config(self.config, self.config_path)
+            logger.info(f"Сохранён редактор: {new_editor}")
+            messagebox.showinfo("Успешно", "Настройки сохранены")
+            self.destroy()
+        except Exception as e:
+            logger.exception("Ошибка сохранения конфига")
+            messagebox.showerror("Ошибка", f"Не удалось сохранить настройки:\n{e}")
 
     def cancel(self):
         self.result = None

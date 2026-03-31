@@ -308,10 +308,6 @@ class MainWindow(tk.Tk):
                 messagebox.showerror("Ошибка", f"Не удалось удалить задачу:\n{e}")
 
     def open_settings(self):
-        dialog = SettingsDialog(self, self.config, self.config_path)
-        self.wait_window(dialog)
-        if dialog.result:
-            # Обновляем локальную копию конфига
-            self.config = dialog.result
-            logger.debug("Настройки обновлены")
-            # Если нужно, можно обновить интерфейс (например, перечитать редактор)
+        from src.gui.dialogs import SettingsDialog
+        SettingsDialog(self, self.config, self.config_path).wait_window()
+        logger.debug("Настройки обновлены")
