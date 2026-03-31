@@ -1,18 +1,16 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-
-from src.config import save_config
+from datetime import date
 from src.logger import get_logger
-import os
 
 logger = get_logger()
 
 class AddEditDialog(tk.Toplevel):
-    def __init__(self, parent, title="Введите задачу", initial_text="", initial_due=""):
+    def __init__(self, parent, title="Введите задачу", initial_text="", initial_due=None):
         super().__init__(parent)
         self.title(title)
-        self.result = None  # будет содержать {"text": ..., "due_date": ...}
-        self.geometry("500x350")
+        self.result = None
+        self.geometry("500x400")
 
         # Текст задачи
         ttk.Label(self, text="Текст задачи:").pack(pady=5)
@@ -21,16 +19,35 @@ class AddEditDialog(tk.Toplevel):
         self.text.insert("1.0", initial_text)
         self.text.focus_set()
 
-        # Дата
-        ttk.Label(self, text="Дата (необязательно, формат YYYY-MM-DD):").pack(pady=5)
-        self.due_entry = ttk.Entry(self, width=20)
-        self.due_entry.insert(0, initial_due)
-        self.due_entry.pack(pady=5)
-
         # Прокрутка для текста
         scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.text.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.text.configure(yscrollcommand=scrollbar.set)
+
+        # Рамка для даты
+        date_frame = ttk.Frame(self)
+        date_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        # Чекбокс для включения даты
+        self.use_date = tk.BooleanVar(value=True)
+        date_check = ttk.Checkbutton(date_frame, text="Установить дату", variable=self.use_date,
+                                     command=self.toggle_date_entry)
+        date_check.pack(side=tk.LEFT, padx=5)
+
+        # Поле ввода даты
+        self.due_entry = ttk.Entry(date_frame, width=12)
+        self.due_entry.pack(side=tk.LEFT, padx=5)
+
+        # Если при редактировании есть дата, заполняем поле и включаем чекбокс
+        if initial_due:
+            self.due_entry.insert(0, initial_due)
+            self.use_date.set(True)
+        else:
+            # По умолчанию ставим текущую дату, если чекбокс включён
+            self.due_entry.insert(0, date.today().isoformat())
+            self.use_date.set(True)
+
+        self.toggle_date_entry()  # установить начальное состояние
 
         # Кнопки
         btn_frame = ttk.Frame(self)
@@ -41,13 +58,26 @@ class AddEditDialog(tk.Toplevel):
         self.bind("<Control-Return>", lambda e: self.on_ok())
         self.bind("<Escape>", lambda e: self.on_cancel())
 
+    #Включает/выключает поле ввода даты
+    def toggle_date_entry(self):
+        if self.use_date.get():
+            self.due_entry.config(state="normal")
+        else:
+            self.due_entry.config(state="disabled")
+
     def on_ok(self):
         text = self.text.get("1.0", tk.END).strip()
-        due = self.due_entry.get().strip()
         if not text:
             messagebox.showwarning("Предупреждение", "Задача не может быть пустой")
             return
-        self.result = {"text": text, "due_date": due if due else None}
+
+        due = None
+        if self.use_date.get():
+            due_val = self.due_entry.get().strip()
+            if due_val:
+                due = due_val
+
+        self.result = {"text": text, "due_date": due}
         self.destroy()
 
     def on_cancel(self):
