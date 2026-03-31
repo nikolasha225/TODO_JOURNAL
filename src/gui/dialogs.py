@@ -30,7 +30,7 @@ class AddEditDialog(tk.Toplevel):
         ttk.Button(btn_frame, text="OK", command=self.on_ok).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Отмена", command=self.on_cancel).pack(side=tk.LEFT, padx=5)
 
-        self.bind("<Return>", lambda e: self.on_ok())
+        self.text.bind("<Control-Return>", lambda e: self.on_ok())
         self.bind("<Escape>", lambda e: self.on_cancel())
 
     def on_ok(self):
