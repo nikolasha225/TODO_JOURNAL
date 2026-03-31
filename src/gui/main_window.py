@@ -167,13 +167,10 @@ class MainWindow(tk.Tk):
     #Обновить отображение списка задач
     def refresh_list(self):
         logger.debug(f"Обновление списка, записей: {len(self.journal.entries)}")
-        names = list(self.config["journals"].keys())
-        self.journal_combo['values'] = names
-        current = self.config.get("current_journal")
-        if current in names:
-            self.journal_var.set(current)
-        else:
-            self.journal_var.set("")
+        self.listbox.delete(0, tk.END)
+        for i, task in enumerate(self.journal.entries, start=1):
+            self.listbox.insert(tk.END, f"{i}. {task}")
+        self.status.config(text=f"Всего задач: {len(self.journal.entries)}")
 
     def edit_task(self):
         logger.debug("edit_task called")
