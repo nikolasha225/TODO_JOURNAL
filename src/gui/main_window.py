@@ -316,21 +316,24 @@ class MainWindow(tk.Tk):
                 pass
 
     def delete_task(self):
-        selection = self.listbox.curselection()
-        if not selection:
-            messagebox.showinfo("Информация", "Выберите задачу для удаления")
-            return
-        idx = selection[0]
-        full_text = self.journal.entries[idx]
-        first_line = full_text.split('\n')[0]
-        if messagebox.askyesno("Подтверждение", f"Удалить задачу:\n{first_line}?"):
-            try:
-                self.journal.remove_entry(idx)
-                logger.info(f"Удалена задача {idx + 1}: {first_line}")
-                self.refresh_list()
-            except Exception as e:
-                logger.exception("Ошибка при удалении")
-                messagebox.showerror("Ошибка", f"Не удалось удалить задачу:\n{e}")
+        total = len(self.journal.entries)
+        # Идём с конца, чтобы индексы не сбивались при удалении
+        for i in range(total - 1, -1, -1):
+            entry = self.journal.entries[i]
+            text = entry["text"]
+            due = entry["due_date"]
+            display = text
+            if due:
+                display += f" [дата: {due}]"
+            if messagebox.askyesno("Удаление задачи", f"Задача {i + 1}:\n{display}\n\nУдалить?"):
+                try:
+                    self.journal.remove_entry(i)
+                    logger.info(f"Интерактивно удалена задача {i + 1}: {display}")
+                    self.refresh_list()
+                except Exception as e:
+                    logger.exception("Ошибка при интерактивном удалении")
+                    messagebox.showerror("Ошибка", f"Не удалось удалить задачу:\n{e}")
+        self.refresh_list()
 
     def open_settings(self):
         from src.gui.dialogs import SettingsDialog
