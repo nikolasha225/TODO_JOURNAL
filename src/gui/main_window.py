@@ -330,9 +330,11 @@ class MainWindow(tk.Tk):
                     self.journal.remove_entry(i)
                     logger.info(f"Интерактивно удалена задача {i + 1}: {display}")
                     self.refresh_list()
+                    break
                 except Exception as e:
                     logger.exception("Ошибка при интерактивном удалении")
                     messagebox.showerror("Ошибка", f"Не удалось удалить задачу:\n{e}")
+                    break
         self.refresh_list()
 
     def open_settings(self):
