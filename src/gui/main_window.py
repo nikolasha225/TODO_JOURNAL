@@ -18,7 +18,7 @@ class MainWindow(tk.Tk):
         self.config = config
         self.config_path = config_path
         self.title(f"Todo Journal: {journal.name}")
-        self.geometry("600x500")
+        self.geometry("900x600")
 
         #Верхняя панель - выбор журнала
         self.top_frame = ttk.Frame(self)
@@ -52,9 +52,13 @@ class MainWindow(tk.Tk):
         self.edit_menubutton.configure(menu=self.edit_menu)
         self.edit_menubutton.pack(side=tk.LEFT, padx=5)
 
+        self.sort_mode = "date"  # "date" или "text"
+        self.sort_btn = ttk.Button(button_frame, text="Сортировать по дате", command=self.toggle_sort)
+        self.sort_btn.pack(side=tk.LEFT, padx=5)
+
         ttk.Button(button_frame, text="Удалить", command=self.delete_task).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Обновить", command=self.refresh_list).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Сортировать по дате", command=self.sort_by_date).pack(side=tk.LEFT, padx=5)
+        #ttk.Button(button_frame, text="Сортировать по дате", command=self.sort_by_date).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Настройки", command=self.open_settings).pack(side=tk.LEFT, padx=5)
         #Статусная строка
         self.status = tk.Label(self, text="Готов", bd=1, relief=tk.SUNKEN, anchor=tk.W)
@@ -200,6 +204,28 @@ class MainWindow(tk.Tk):
             self.refresh_list()
 
     #-------------тудушки----------------
+    #Сортирует журнал согласно режиму
+    def sort_current(self):
+        if self.sort_mode == "date":
+            # Сортировка по дате
+            self.journal.entries.sort(key=lambda e: (e["due_date"] is None, e["due_date"]))
+        else:
+            # Сортировка по тексту
+            self.journal.entries.sort(key=lambda e: e["text"].lower())
+        # Сохраняем изменения в файл
+        self.journal._update({'name': self.journal.name, 'todos': self.journal.entries})
+        self.refresh_list()
+
+    #Переключает режим сортировки
+    def toggle_sort(self):
+        if self.sort_mode == "date":
+            self.sort_mode = "text"
+            self.sort_btn.config(text="Сортировать по тексту")
+        else:
+            self.sort_mode = "date"
+            self.sort_btn.config(text="Сортировать по дате")
+        self.sort_current()
+
     #Добавить задачу
     def add_task(self):
         dialog = AddEditDialog(self, title="Добавить задачу")
