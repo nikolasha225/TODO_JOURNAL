@@ -28,8 +28,14 @@ addopts = "--cov=src --cov-report=term-missing --cov-report=html"
 python_files = "test_*.py"
 
 [tool.coverage.run]
-include = ["src/*"]                 # анализировать только код в src/
-omit = ["tests/*", "*/__init__.py", "src/gui/*"] # исключить
+source = ["src"]
+omit = [
+    "tests/*",
+    "*/gui/*",
+    "src/gui/*",
+    "*/__init__.py",
+    "*/*/__init__.py"
+] #не работает
 
 [tool.coverage.report]
 exclude_lines = [
