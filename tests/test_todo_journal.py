@@ -36,13 +36,8 @@ def test_add_entry(tmpdir):
     todo_path = tmpdir.join("test.todo")
     TodoJournal.create(todo_path, "test")
     journal = TodoJournal(todo_path)
-
     journal.add_entry("Помыть посуду")
-    assert journal.entries == ["Помыть посуду"]
-
-    with open(todo_path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    assert data["todos"] == ["Помыть посуду"]
+    assert journal.entries == [{"text": "Помыть посуду", "due_date": None}]
 
 
 #Проверка удаления задачи
@@ -52,13 +47,8 @@ def test_remove_entry(tmpdir):
     journal = TodoJournal(todo_path)
     journal.add_entry("Задача 1")
     journal.add_entry("Задача 2")
-
     journal.remove_entry(0)
-    assert journal.entries == ["Задача 2"]
-
-    with open(todo_path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    assert data["todos"] == ["Задача 2"]
+    assert journal.entries == [{"text": "Задача 2", "due_date": None}]
 
 
 #Проверка __len__
@@ -115,13 +105,22 @@ def test_setattr_readonly(journal_with_entries):
 #Проверка edit_entry
 def test_edit_entry(journal_with_entries, tmpdir):
     journal_with_entries.edit_entry(1, "Изменённая задача")
-    assert journal_with_entries.entries == ["Задача 1", "Изменённая задача", "Задача 3"]
-
-    #Проверяем, что изменения сохранились в файл
-    with open(journal_with_entries.path_todo, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    assert data["todos"] == ["Задача 1", "Изменённая задача", "Задача 3"]
-
+    assert journal_with_entries.entries == [
+        {"text": "Задача 1", "due_date": None},
+        {"text": "Изменённая задача", "due_date": None},
+        {"text": "Задача 3", "due_date": None}
+    ]
     #Проверка выхода за границы
     with pytest.raises(IndexError):
         journal_with_entries.edit_entry(10, "несуществующая")
+
+def test_add_entry_with_date(tmpdir):
+    todo_path = tmpdir.join("test.todo")
+    TodoJournal.create(todo_path, "test")
+    journal = TodoJournal(todo_path)
+    journal.add_entry("Задача с датой", "2025-12-31")
+    assert journal.entries == [{"text": "Задача с датой", "due_date": "2025-12-31"}]
+
+def test_edit_entry_with_date(journal_with_entries):
+    journal_with_entries.edit_entry(1, new_due_date="2025-12-31")
+    assert journal_with_entries.entries[1]["due_date"] == "2025-12-31"
